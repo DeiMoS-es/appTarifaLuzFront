@@ -1,0 +1,16 @@
+/* You can add global styles to this file, and also import other style files */
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    font-family: sans-serif;
+}
+
+@media (max-width: 768px) {
+    footer {
+      position: relative;
+      margin-top: 20px; /* Ajusta según sea necesario para separar del contenido */
+    }
+  }

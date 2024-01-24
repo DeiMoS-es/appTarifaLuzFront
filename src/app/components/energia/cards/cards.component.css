@@ -1,0 +1,23 @@
+.card{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(243, 242, 242);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    width: 260px;
+    height: 260px;
+    border-radius: 15%;
+    padding: 0;
+    margin: 0;
+}
+/* h2{
+    text-align: center;
+} */
+.card .date{
+    display: flex;
+    align-items: center;
+}
+.card .date svg{
+    margin-right: 0.4rem;
+}
