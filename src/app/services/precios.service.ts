@@ -7,7 +7,7 @@ import { Injectable } from '@angular/core';
 export class PreciosService {
 
   // baseUrl = 'http://localhost:3000/api/precios';
-  baseUrlVercel = 'https://appluzback-rf305eznq-deimoss-projects.vercel.app/api/precios';
+  baseUrlVercel = 'https://app-tarifa-luz-back.vercel.app/api/precios';
 
   constructor(private httpClient: HttpClient) { }
 
