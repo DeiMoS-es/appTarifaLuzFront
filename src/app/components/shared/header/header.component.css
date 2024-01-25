@@ -45,6 +45,7 @@ header {
   color: white;
   font-weight: bold;
 }
+
 .navBar ul li:hover{
   border: 2px solid white;
   color: #0043fa;
@@ -55,3 +56,47 @@ header {
   cursor: pointer;
 }
 
+.hamburger{
+  display: none;
+  border: 0px;
+  font-size: 20px;
+  color: white;background: inherit;
+  align-items: center;
+}
+
+.mobile-nav {
+  flex-direction: column;
+  position: absolute;
+  top: 100px;
+  right: 0;
+  width: 30%;
+  height: 20%;
+  background-color: #3498db;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  header{
+    overflow: hidden;
+  }
+  .hamburger {
+      display: block;
+  }
+  .mobile-nav ul {
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    padding: 5px;
+  }
+  .mobile-nav ul li{
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .navBar {
+      display: none;
+      justify-content: space-around;
+      align-items: center;  
+  }
+}

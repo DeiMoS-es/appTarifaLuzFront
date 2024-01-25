@@ -21,6 +21,7 @@
   height: 450px;
 
 }
+
 #chart svg {
   width: 100%; /* Hace que el SVG ocupe el 100% del contenedor */
   height: auto; /* Ajusta automáticamente la altura según la relación de aspecto */
@@ -39,4 +40,10 @@
   justify-content: space-around;
   flex-wrap: wrap; /* Esto permite que las cards se desborden en varias filas */
   gap: 80px;
+}
+
+@media (max-width: 600px) {
+  .chart-container{
+    width: 100%;
+  }
 }
