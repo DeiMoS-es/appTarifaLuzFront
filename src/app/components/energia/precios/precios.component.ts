@@ -95,9 +95,11 @@ export class PreciosComponent implements OnInit {
 
   private escalarDatos() {
     const { width, height, color } = this.configurarGrafico();
-    const horas = this.precioZona.preciosHoras.map((d: Data, i: number) =>
-      i.toString()
-    );
+    const horas = this.precioZona.preciosHoras.map((d: Data, i: number) => {
+      const fecha = new Date(d.datetime);
+      const hora = fecha.getHours().toString().padStart(2, '0');    
+      return hora;
+    });
     const x = d3.scaleBand().range([0, width]).padding(0.3);
     const y = d3.scaleLinear().range([height, 0]);
 
@@ -173,7 +175,7 @@ export class PreciosComponent implements OnInit {
         'transform',
         (d: Data) =>
           `translate(${
-            (x(new Date(d.datetime).getHours().toString()) || 0) +
+            (x(new Date(d.datetime).getHours().toString().padStart(2, '0')) || 0) +
             x.bandwidth() / 2
           },${y(d.precio)})`
       )
@@ -211,7 +213,7 @@ export class PreciosComponent implements OnInit {
       .attr('class', 'bar')
       .attr(
         'x',
-        (d: Data) => x(new Date(d.datetime).getHours().toString()) || 0
+        (d: Data) => x(new Date(d.datetime).getHours().toString().padStart(2, '0')) || 0
       )
       .attr('width', x.bandwidth())
       .attr('y', (d: Data) => y(d.precio))
@@ -259,12 +261,11 @@ export class PreciosComponent implements OnInit {
     y: d3.ScaleLinear<number, number>
   ) {
     const ahora = new Date();
-    const horaActual = ahora.getHours().toString(); // Obtén solo la hora del formato ISO
+    const horaActual = ahora.getHours().toString().padStart(2, '0');; // Obtén solo la hora del formato ISO
     const { height } = this.configurarGrafico();
-
     // Obtener la altura de la barra correspondiente a la hora actual
     const alturaBarra = height - y(this.precioZona.preciosHoras.find((d: Data) => d.datetime.slice(11, 13) === horaActual)?.precio || 0);
-
+    
     // Añadir un marco a la barra correspondiente a la hora actual
     svg
       .append('rect')
