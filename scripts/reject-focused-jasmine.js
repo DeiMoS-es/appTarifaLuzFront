@@ -15,11 +15,9 @@ function findFocusedDeclarations(source, fileName) {
   const findings = [];
 
   function visit(node) {
-    if (ts.isCallExpression(node) &&
-        ts.isIdentifier(node.expression) &&
-        focusedNames.has(node.expression.text)) {
-      const position = sourceFile.getLineAndCharacterOfPosition(node.expression.getStart(sourceFile));
-      findings.push(`${fileName}:${position.line + 1}:${position.character + 1} ${node.expression.text}`);
+    if (ts.isIdentifier(node) && focusedNames.has(node.text)) {
+      const position = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+      findings.push(`${fileName}:${position.line + 1}:${position.character + 1} ${node.text}`);
     }
     ts.forEachChild(node, visit);
   }
