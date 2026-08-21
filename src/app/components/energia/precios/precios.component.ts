@@ -1,14 +1,31 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { PreciosService } from 'src/app/services/precios.service';
 import * as d3 from 'd3';
-import { Data } from 'src/app/interfaces/data';
+import { AvailableResult, Data, DayPriceResult, DaySelector, FailureResult } from 'src/app/interfaces/data';
+import { Subscription } from 'rxjs';
+
+type LoadedDayViewModel = {
+  [State in DayPriceResult['state']]: {
+    readonly selector: DaySelector;
+    readonly state: State;
+    readonly result: Extract<DayPriceResult, { state: State }>;
+  }
+}[DayPriceResult['state']];
+
+export type DayViewModel = LoadedDayViewModel | {
+  readonly selector: DaySelector;
+  readonly state: 'loading';
+  readonly result: null;
+};
 
 @Component({
   selector: 'app-precios',
   templateUrl: './precios.component.html',
   styleUrls: ['./precios.component.css'],
 })
-export class PreciosComponent implements OnInit {
+export class PreciosComponent implements OnInit, OnDestroy {
+  todayDay: DayViewModel = this.loadingDay('today');
+  tomorrowDay: DayViewModel = this.loadingDay('tomorrow');
   // Variables
   precioZona: any; // TIpo any de momento
   fechaActual = new Date();
@@ -17,26 +34,106 @@ export class PreciosComponent implements OnInit {
   precioMedio:number = 0;
   precioMaximo: number = 0;
   precioMinimo: number = 0;
+  private readonly daySubscriptions: Partial<Record<DaySelector, Subscription>> = {};
   
   constructor(private preciosService: PreciosService) {}
 
   ngOnInit() {
-    this.preciosService.getPrecios().subscribe({
-      next: (precio) => {
-        this.precioZona = precio;
-        this.crearGrafico();
-        this.cardDataArray = [
-          { title: 'Precio medio del día', date:this.fechaFormateada ,price: `${this.precioMedio} €/kWh` },
-          { title: 'Precio máximo del día', date:this.fechaFormateada ,price: `${this.precioMaximo} €/kWh` },
-          { title: 'Precio mínimo del día', date:this.fechaFormateada ,price: `${this.precioMinimo} €/kWh` }
-        ];
+    this.loadDay('today');
+    this.loadDay('tomorrow');
+  }
+
+  retry(selector: DaySelector): void {
+    this.loadDay(selector);
+  }
+
+  ngOnDestroy(): void {
+    this.daySubscriptions.today?.unsubscribe();
+    this.daySubscriptions.tomorrow?.unsubscribe();
+  }
+
+  private loadDay(selector: DaySelector): void {
+    this.daySubscriptions[selector]?.unsubscribe();
+    this.setDay(selector, this.loadingDay(selector));
+    this.daySubscriptions[selector] = this.preciosService.getPrecios(selector).subscribe({
+      next: result => {
+        this.setDay(selector, this.loadedDay(selector, result));
+        if (selector === 'today' && result.state === 'available') {
+          this.updateLegacyToday(result);
+        }
       },
-      error: (err) => {
-        console.log(err);
-      },
+      error: response => {
+        const failure = this.failureFrom(response, selector);
+        this.setDay(selector, this.loadedDay(selector, failure));
+      }
     });
   }
 
+  private failureFrom(response: unknown, selector: DaySelector): FailureResult {
+    if (typeof response === 'object' && response !== null && 'error' in response
+      && this.isFailureResult(response.error)) {
+      return response.error;
+    }
+
+    return {
+      selector, resolvedDate: '', timeZone: 'Europe/Madrid',
+      expectedIntervalCount: 0, receivedIntervalCount: 0,
+      state: 'failure', values: [], retryable: true,
+      error: { code: 'transport', message: 'Unable to load electricity prices.' }
+    };
+  }
+
+  private isFailureResult(result: unknown): result is FailureResult {
+    if (typeof result !== 'object' || result === null) return false;
+    const failure = result as Partial<FailureResult>;
+    return failure.state === 'failure' && (failure.selector === 'today' || failure.selector === 'tomorrow')
+      && typeof failure.resolvedDate === 'string' && failure.timeZone === 'Europe/Madrid'
+      && typeof failure.expectedIntervalCount === 'number' && typeof failure.receivedIntervalCount === 'number'
+      && Array.isArray(failure.values) && failure.values.length === 0 && typeof failure.retryable === 'boolean'
+      && typeof failure.error === 'object' && failure.error !== null
+      && ['transport', 'timeout', 'provider', 'malformed_payload'].includes(failure.error.code)
+      && typeof failure.error.message === 'string';
+  }
+
+  private loadingDay(selector: DaySelector): DayViewModel {
+    return { selector, state: 'loading', result: null };
+  }
+
+  private loadedDay(selector: DaySelector, result: DayPriceResult): LoadedDayViewModel {
+    switch (result.state) {
+      case 'available':
+        return { selector, state: result.state, result };
+      case 'unavailable':
+        return { selector, state: result.state, result };
+      case 'incomplete':
+        return { selector, state: result.state, result };
+      case 'empty':
+        return { selector, state: result.state, result };
+      case 'failure':
+        return { selector, state: result.state, result };
+    }
+  }
+
+  private setDay(selector: DaySelector, day: DayViewModel): void {
+    if (selector === 'today') {
+      this.todayDay = day;
+      return;
+    }
+
+    this.tomorrowDay = day;
+  }
+
+  private updateLegacyToday(result: AvailableResult): void {
+    this.precioZona = {
+      preciosHoras: result.values.map(value => ({ precio: value.valueEurMWh, datetime: value.startsAt }))
+    };
+    this.crearGrafico();
+    this.cardDataArray = [
+      { title: 'Precio medio del día', date: this.fechaFormateada, price: `${this.precioMedio} €/kWh` },
+      { title: 'Precio máximo del día', date: this.fechaFormateada, price: `${this.precioMaximo} €/kWh` },
+      { title: 'Precio mínimo del día', date: this.fechaFormateada, price: `${this.precioMinimo} €/kWh` }
+    ];
+  }
   private obtenerFechaFormateada(fecha: Date): string {
     const opcionesDeFormato: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
     const fechaFormateada = fecha.toLocaleDateString('es-ES', opcionesDeFormato);  
