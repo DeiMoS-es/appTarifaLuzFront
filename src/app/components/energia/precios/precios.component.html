@@ -1,12 +1,49 @@
-<section class="chart-container">
-    <div class="fecha">
-        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-week" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12z" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M8 14v4" /><path d="M12 14v4" /><path d="M16 14v4" /></svg>
-        <span class="fechaActual">Datos a fecha: {{fechaFormateada}}</span>
-    </div>    
-    <div id="chart"></div>
-</section>
-<section class="card-container">
-    <div *ngFor="let cardData of cardDataArray">
-        <app-cards [cardData]="cardData"></app-cards>
-    </div>
-</section>
+<main class="days" aria-label="Precios de la electricidad">
+  <section class="day" data-day="today" aria-labelledby="today-title">
+    <ng-container *ngTemplateOutlet="dayContent; context: { day: todayDay, title: 'Hoy', id: 'today-title' }"></ng-container>
+  </section>
+  <section class="day" data-day="tomorrow" aria-labelledby="tomorrow-title">
+    <ng-container *ngTemplateOutlet="dayContent; context: { day: tomorrowDay, title: 'Mañana', id: 'tomorrow-title' }"></ng-container>
+  </section>
+</main>
+
+<ng-template #dayContent let-day="day" let-title="title" let-id="id">
+  <h2 [id]="id">{{ title }}</h2>
+  <p *ngIf="day.result?.resolvedDate" class="date">{{ day.result.resolvedDate }}</p>
+  <div [ngSwitch]="day.state">
+    <p *ngSwitchCase="'loading'" role="status">Cargando precios…</p>
+
+    <ng-container *ngSwitchCase="'available'">
+      <ng-container *ngIf="availableResult(day) as result">
+        <ol class="chart" [attr.aria-label]="'Gráfico de precios de ' + (day.selector === 'today' ? 'hoy' : 'mañana')">
+          <li *ngFor="let point of chartPoints(result); trackBy: trackPoint"
+              [attr.data-instant]="point.key" [attr.aria-label]="point.label + ', ' + (point.valueEurMWh / 1000) + ' €/kWh'">
+            <span class="bar" role="meter" [attr.aria-valuemin]="minimumPrice(result)"
+                   [attr.aria-valuenow]="point.valueEurMWh" [attr.aria-valuemax]="maximumPrice(result)"
+                   [style.height.%]="barHeight(point.valueEurMWh, result)"></span>
+            <span>{{ point.label }}</span>
+            <strong *ngIf="isCurrent(day.selector, point)">Ahora</strong>
+          </li>
+        </ol>
+        <dl *ngIf="priceSummary(result) as summary" class="metrics" data-derived>
+          <div><dt>Mínimo:</dt><dd>{{ summary.minimum }} €/kWh</dd></div>
+          <div><dt>Máximo:</dt><dd>{{ summary.maximum }} €/kWh</dd></div>
+          <div><dt>Media:</dt><dd>{{ summary.average }} €/kWh</dd></div>
+          <div><dt>Recomendación:</dt><dd>Mejor hora: {{ summary.bestHour }}</dd></div>
+        </dl>
+      </ng-container>
+    </ng-container>
+
+    <ng-container *ngSwitchCase="'unavailable'">
+      <p role="status" *ngIf="day.result.reason === 'before_publication'; else delayed">Los precios aún no están publicados. Se espera su publicación a las 20:15.</p>
+      <ng-template #delayed><p role="status">El proveedor todavía no ha publicado los precios.</p></ng-template>
+      <button type="button" (click)="retry(day.selector)">Reintentar</button>
+    </ng-container>
+    <p *ngSwitchCase="'incomplete'" role="alert">Los datos están incompletos: {{ day.result.receivedIntervalCount }} de {{ day.result.expectedIntervalCount }} intervalos.</p>
+    <p *ngSwitchCase="'empty'" role="status">No hay precios disponibles para este día.</p>
+    <ng-container *ngSwitchCase="'failure'">
+      <p role="alert">No se pudieron cargar los precios.</p>
+      <button *ngIf="day.result.retryable" type="button" (click)="retry(day.selector)">Reintentar</button>
+    </ng-container>
+  </div>
+</ng-template>

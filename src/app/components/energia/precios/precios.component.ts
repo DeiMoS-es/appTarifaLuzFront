@@ -3,6 +3,7 @@ import { PreciosService } from 'src/app/services/precios.service';
 import * as d3 from 'd3';
 import { AvailableResult, Data, DayPriceResult, DaySelector, FailureResult } from 'src/app/interfaces/data';
 import { Subscription } from 'rxjs';
+import { buildPriceChartPoints, PriceChartPoint } from './price-chart';
 
 type LoadedDayViewModel = {
   [State in DayPriceResult['state']]: {
@@ -17,6 +18,13 @@ export type DayViewModel = LoadedDayViewModel | {
   readonly state: 'loading';
   readonly result: null;
 };
+
+interface PriceSummary {
+  readonly minimum: string;
+  readonly maximum: string;
+  readonly average: string;
+  readonly bestHour: string;
+}
 
 @Component({
   selector: 'app-precios',
@@ -58,9 +66,6 @@ export class PreciosComponent implements OnInit, OnDestroy {
     this.daySubscriptions[selector] = this.preciosService.getPrecios(selector).subscribe({
       next: result => {
         this.setDay(selector, this.loadedDay(selector, result));
-        if (selector === 'today' && result.state === 'available') {
-          this.updateLegacyToday(result);
-        }
       },
       error: response => {
         const failure = this.failureFrom(response, selector);
@@ -123,17 +128,59 @@ export class PreciosComponent implements OnInit, OnDestroy {
     this.tomorrowDay = day;
   }
 
-  private updateLegacyToday(result: AvailableResult): void {
-    this.precioZona = {
-      preciosHoras: result.values.map(value => ({ precio: value.valueEurMWh, datetime: value.startsAt }))
-    };
-    this.crearGrafico();
-    this.cardDataArray = [
-      { title: 'Precio medio del día', date: this.fechaFormateada, price: `${this.precioMedio} €/kWh` },
-      { title: 'Precio máximo del día', date: this.fechaFormateada, price: `${this.precioMaximo} €/kWh` },
-      { title: 'Precio mínimo del día', date: this.fechaFormateada, price: `${this.precioMinimo} €/kWh` }
-    ];
+  availableResult(day: DayViewModel): AvailableResult | null {
+    return day.state === 'available' ? day.result : null;
   }
+
+  chartPoints(result: AvailableResult): PriceChartPoint[] {
+    return buildPriceChartPoints(result.values);
+  }
+
+  priceSummary(result: AvailableResult): PriceSummary {
+    const points = this.chartPoints(result);
+    const prices = points.map(point => point.valueEurMWh);
+    const minimum = Math.min(...prices);
+    const maximum = Math.max(...prices);
+    const average = prices.reduce((sum, price) => sum + price, 0) / prices.length;
+    const bestHour = points.find(point => point.valueEurMWh === minimum)?.label ?? '';
+    return {
+      minimum: this.formatPrice(minimum), maximum: this.formatPrice(maximum),
+      average: this.formatPrice(average), bestHour
+    };
+  }
+
+  trackPoint(_: number, point: PriceChartPoint): string {
+    return point.key;
+  }
+
+  isCurrent(selector: DaySelector, point: PriceChartPoint): boolean {
+    const startsAt = Date.parse(point.key);
+    return selector === 'today' && startsAt <= Date.now() && Date.now() < startsAt + 60 * 60 * 1000;
+  }
+
+  minimumPrice(result: AvailableResult): number {
+    const minimum = Math.min(...result.values.map(value => value.valueEurMWh));
+    const maximum = Math.max(...result.values.map(value => value.valueEurMWh));
+    return minimum === maximum ? Math.min(0, minimum) : minimum;
+  }
+
+  maximumPrice(result: AvailableResult): number {
+    const minimum = Math.min(...result.values.map(value => value.valueEurMWh));
+    const maximum = Math.max(...result.values.map(value => value.valueEurMWh));
+    return minimum === maximum ? (maximum === 0 ? 1 : Math.max(0, maximum)) : maximum;
+  }
+
+  barHeight(value: number, result: AvailableResult): number {
+    const minimum = this.minimumPrice(result);
+    return (value - minimum) / (this.maximumPrice(result) - minimum) * 100;
+  }
+
+  private formatPrice(valueEurMWh: number): string {
+    return (valueEurMWh / 1000).toLocaleString('es-ES', {
+      minimumFractionDigits: 3, maximumFractionDigits: 3
+    });
+  }
+
   private obtenerFechaFormateada(fecha: Date): string {
     const opcionesDeFormato: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
     const fechaFormateada = fecha.toLocaleDateString('es-ES', opcionesDeFormato);  

@@ -1,4 +1,7 @@
 import { Observable, Subject } from 'rxjs';
+import { CommonModule } from '@angular/common';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import {
   AvailableResult,
   DayPriceResult,
@@ -10,10 +13,12 @@ import {
 } from 'src/app/interfaces/data';
 import { PreciosService } from 'src/app/services/precios.service';
 import { PreciosComponent } from './precios.component';
+
 describe('PreciosComponent', () => {
   let component: PreciosComponent;
   let getPrecios: jasmine.Spy;
   let requests: Record<DaySelector, Subject<DayPriceResult>[]>;
+
   const availableToday: AvailableResult = {
     selector: 'today',
     resolvedDate: '2026-08-21',
@@ -28,6 +33,7 @@ describe('PreciosComponent', () => {
       valueEurMWh: 92.41
     }]
   };
+
   const unavailableTomorrow: UnavailableResult = {
     selector: 'tomorrow',
     resolvedDate: '2026-08-22',
@@ -194,23 +200,6 @@ describe('PreciosComponent', () => {
     });
   });
 
-  it('keeps the legacy today presentation populated before the two-day template lands', () => {
-    const createChart = spyOn<any>(component, 'crearGrafico').and.callFake(() => {
-      component.precioMedio = 0.092;
-      component.precioMaximo = 0.092;
-      component.precioMinimo = 0.092;
-    });
-    component.ngOnInit();
-    requests.today[0].next(availableToday);
-    expect(component.precioZona.preciosHoras).toEqual([
-      { precio: 92.41, datetime: '2026-08-21T00:00:00+02:00' }
-    ]);
-    expect(createChart).toHaveBeenCalledTimes(1);
-    expect(component.cardDataArray.map(card => card.price)).toEqual([
-      '0.092 €/kWh', '0.092 €/kWh', '0.092 €/kWh'
-    ]);
-  });
-
   it('accepts only the latest selector request and stops updates after destruction', () => {
     component.ngOnInit();
     component.retry('today');
@@ -250,4 +239,139 @@ describe('PreciosComponent', () => {
     expect(component.tomorrowDay.result).toBe(unavailableTomorrow);
   });
 
+  describe('two-day presentation', () => {
+    let fixture: ComponentFixture<PreciosComponent>;
+
+    beforeEach(async () => {
+      await TestBed.configureTestingModule({
+        imports: [CommonModule],
+        declarations: [PreciosComponent],
+        providers: [{ provide: PreciosService, useValue: { getPrecios } }],
+        schemas: [NO_ERRORS_SCHEMA]
+      }).compileComponents();
+      fixture = TestBed.createComponent(PreciosComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelectorAll('[role="status"]').length).toBe(2);
+      expect(fixture.nativeElement.textContent).toContain('Cargando precios');
+    });
+
+    it('presents each day independently and retries only an unavailable day', () => {
+      requests.today[0].next(availableToday);
+      requests.tomorrow[0].next(unavailableTomorrow);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain('Hoy');
+      expect(fixture.nativeElement.textContent).toContain('Mañana');
+      expect(fixture.nativeElement.textContent).toContain('Se espera su publicación a las 20:15');
+
+      const retry = fixture.nativeElement.querySelector('[data-day="tomorrow"] button');
+      retry.click();
+
+      expect(getPrecios.calls.allArgs()).toEqual([['today'], ['tomorrow'], ['tomorrow']]);
+      expect(component.todayDay.result).toBe(availableToday);
+    });
+
+    it('distinguishes provider delay, empty, and failure messages', () => {
+      requests.today[0].next({
+        ...unavailableTomorrow,
+        selector: 'today',
+        reason: 'provider_delay',
+        expectedPublicationAt: undefined
+      });
+      requests.tomorrow[0].next({
+        selector: 'tomorrow', resolvedDate: '2026-08-22', timeZone: 'Europe/Madrid',
+        expectedIntervalCount: 24, receivedIntervalCount: 0, state: 'empty', values: []
+      });
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain('El proveedor todavía no ha publicado los precios');
+      expect(fixture.nativeElement.textContent).toContain('No hay precios disponibles para este día');
+      fixture.nativeElement.querySelector('[data-day="today"] button').click();
+      expect(getPrecios.calls.mostRecent().args).toEqual(['today']);
+
+      requests.tomorrow[0].next({
+        selector: 'tomorrow', resolvedDate: '2026-08-22', timeZone: 'Europe/Madrid',
+        expectedIntervalCount: 24, receivedIntervalCount: 0, state: 'failure', values: [],
+        retryable: true, error: { code: 'provider', message: 'Provider unavailable' }
+      });
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('No se pudieron cargar los precios');
+      expect(fixture.nativeElement.querySelector('[data-derived]')).toBeNull();
+      fixture.nativeElement.querySelector('[data-day="tomorrow"] button').click();
+      expect(getPrecios.calls.mostRecent().args).toEqual(['tomorrow']);
+    });
+
+    it('shows coverage but suppresses every derived output for incomplete data', () => {
+      requests.today[0].next({
+        selector: 'today', resolvedDate: '2026-08-21', timeZone: 'Europe/Madrid',
+        expectedIntervalCount: 24, receivedIntervalCount: 23, state: 'incomplete',
+        values: availableToday.values, reason: 'coverage_mismatch'
+      });
+      fixture.detectChanges();
+
+      const today = fixture.nativeElement.querySelector('[data-day="today"]');
+      expect(today.textContent).toContain('23 de 24 intervalos');
+      expect(today.querySelector('[data-derived]')).toBeNull();
+      expect(today.querySelector('[aria-label="Gráfico de precios de hoy"]')).toBeNull();
+    });
+
+    it('renders complete charts, metrics, and recommendations with DST-safe points', () => {
+      const complete: AvailableResult = {
+        ...availableToday,
+        expectedIntervalCount: 2,
+        receivedIntervalCount: 2,
+        values: [availableToday.values[0], {
+          startsAt: '2026-08-21T01:00:00+02:00', instant: new Date(Date.now() - 1000).toISOString(),
+          utcOffsetMinutes: 120, valueEurMWh: 107.59
+        }]
+      };
+      requests.today[0].next(complete);
+      fixture.detectChanges();
+
+      const today = fixture.nativeElement.querySelector('[data-day="today"]');
+      expect(today.querySelectorAll('[data-instant]').length).toBe(2);
+      const bars = today.querySelectorAll('[role="meter"]');
+      expect(bars[0].getAttribute('aria-valuenow')).toBe('92.41');
+      expect(bars[0].getAttribute('aria-valuemax')).toBe('107.59');
+      expect(today.textContent).toContain('00:00');
+      expect(today.textContent).toContain('Ahora');
+      const values = Array.from(today.querySelectorAll('dd')).map((item: any) => item.textContent);
+      expect(values).toContain('0,092 €/kWh');
+      expect(values).toContain('0,108 €/kWh');
+      expect(values).toContain('0,100 €/kWh');
+      expect(today.textContent).toContain('Mejor hora: 00:00');
+    });
+
+    it('renders finite valid meters for zero, negative, and mixed-sign prices', () => {
+      const cases = [
+        { prices: [0, 0], heights: ['0%', '0%'] },
+        { prices: [-20, -10], heights: ['0%', '100%'] },
+        { prices: [-10, 10], heights: ['0%', '100%'] }
+      ];
+
+      for (const testCase of cases) {
+        requests.today[0].next({
+          ...availableToday, expectedIntervalCount: 2, receivedIntervalCount: 2,
+          values: testCase.prices.map((valueEurMWh, index) => ({
+            ...availableToday.values[0],
+            startsAt: `2026-08-21T0${index}:00:00+02:00`,
+            instant: `2026-08-20T2${2 + index}:00:00Z`, valueEurMWh
+          }))
+        });
+        fixture.detectChanges();
+
+        const bars = Array.from(fixture.nativeElement.querySelectorAll('[data-day="today"] [role="meter"]')) as HTMLElement[];
+        expect(bars.map(bar => bar.style.height)).toEqual(testCase.heights);
+        for (const bar of bars) {
+          const [minimum, value, maximum] = ['aria-valuemin', 'aria-valuenow', 'aria-valuemax']
+            .map(attribute => Number(bar.getAttribute(attribute)));
+          expect(Number.isFinite(minimum) && Number.isFinite(value) && Number.isFinite(maximum)).toBeTrue();
+          expect(minimum).toBeLessThan(maximum);
+          expect(value).toBeGreaterThanOrEqual(minimum);
+          expect(value).toBeLessThanOrEqual(maximum);
+        }
+      }
+    });
+  });
 });
