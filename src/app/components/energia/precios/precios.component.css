@@ -1,49 +1,70 @@
-.chart-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;  
-  align-items: center;
-  width: 80%;
-  height: auto;
-  margin-top: 1rem;
-  margin-left: auto;
-  margin-right: auto;
+.days {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr));
+  gap: 1.5rem;
+  width: min(95%, 75rem);
+  margin: 1rem auto 6rem;
+}
+
+.day {
+  padding: 1.25rem;
   background-color: rgb(243, 242, 242);
-  border-radius: 1%;  
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); /* Ajusta los valores según tus preferencias */
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
 }
 
-#chart {
+.day h2,
+.date {
+  text-align: center;
+}
+
+.chart {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  max-width: 1000px; /* Máximo ancho del gráfico */
-  height: 450px;
-
+  align-items: flex-end;
+  gap: 0.25rem;
+  height: 18rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
 }
 
-#chart svg {
-  width: 100%; /* Hace que el SVG ocupe el 100% del contenedor */
-  height: auto; /* Ajusta automáticamente la altura según la relación de aspecto */
+.chart li {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  align-items: end;
+  min-width: 1.75rem;
+  height: 100%;
+  font-size: 0.7rem;
+  text-align: center;
 }
 
-.fecha{
-  display: flex;
-  align-items: center;
-  margin-top: 1rem;
+.bar {
+  display: block;
+  min-height: 0.25rem;
+  max-height: 100%;
+  background: #1976d2;
+  border-radius: 0.25rem 0.25rem 0 0;
 }
 
-.card-container{
-  display: flex;
-  margin-top: 3rem;
-  margin-bottom: 100px;
-  justify-content: space-around;
-  flex-wrap: wrap; /* Esto permite que las cards se desborden en varias filas */
-  gap: 80px;
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.75rem;
 }
 
-@media (max-width: 600px) {
-  .chart-container{
-    width: 100%;
-  }
+.metrics div {
+  padding: 0.75rem;
+  background: white;
+  border-radius: 0.25rem;
+}
+
+.metrics dd {
+  margin: 0.25rem 0 0;
+  font-weight: 700;
+}
+
+button {
+  padding: 0.6rem 1rem;
+  cursor: pointer;
 }
