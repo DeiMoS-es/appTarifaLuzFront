@@ -19,6 +19,12 @@
   box-shadow: none;
 }
 
+.day.tomorrow-designed {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .day h2,
 .date {
   text-align: center;

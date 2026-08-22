@@ -1,5 +1,5 @@
 <main class="days" aria-label="Precios de la electricidad">
-  <section class="day" [class.today-available]="todayDay.state === 'available'" data-day="today" aria-labelledby="today-title">
+  <section *ngIf="selectedDay === 'today'" class="day" [class.today-available]="todayDay.state === 'available'" data-day="today" aria-labelledby="today-title">
     <ng-container *ngIf="availableResult(todayDay) as result; else todayState">
       <h2 id="today-title" class="sr-only">Hoy</h2>
       <p class="sr-only">{{ result.resolvedDate }}</p>
@@ -9,8 +9,15 @@
       <ng-container *ngTemplateOutlet="dayContent; context: { day: todayDay, title: 'Hoy', id: 'today-title' }"></ng-container>
     </ng-template>
   </section>
-  <section class="day" data-day="tomorrow" aria-labelledby="tomorrow-title">
-    <ng-container *ngTemplateOutlet="dayContent; context: { day: tomorrowDay, title: 'Mañana', id: 'tomorrow-title' }"></ng-container>
+  <section *ngIf="selectedDay === 'tomorrow'" class="day" [class.tomorrow-designed]="tomorrowDay.state === 'available' || tomorrowDay.state === 'unavailable'" data-day="tomorrow" aria-labelledby="tomorrow-title">
+    <ng-container *ngIf="availableResult(tomorrowDay) as result; else tomorrowState">
+      <h2 id="tomorrow-title" class="sr-only">Mañana</h2>
+      <app-tomorrow-price [result]="result" [todayResult]="availableResult(todayDay)"></app-tomorrow-price>
+    </ng-container>
+    <ng-template #tomorrowState>
+      <app-tomorrow-unavailable *ngIf="unavailableResult(tomorrowDay) as result; else tomorrowOther" [result]="result" (retryRequested)="retry('tomorrow')"></app-tomorrow-unavailable>
+      <ng-template #tomorrowOther><ng-container *ngTemplateOutlet="dayContent; context: { day: tomorrowDay, title: 'Mañana', id: 'tomorrow-title' }"></ng-container></ng-template>
+    </ng-template>
   </section>
 </main>
 
@@ -42,9 +49,7 @@
     </ng-container>
 
     <ng-container *ngSwitchCase="'unavailable'">
-      <p role="status" *ngIf="day.result.reason === 'before_publication'; else delayed">Los precios aún no están publicados. Se espera su publicación a las 20:15.</p>
-      <ng-template #delayed><p role="status">El proveedor todavía no ha publicado los precios.</p></ng-template>
-      <button type="button" (click)="retry(day.selector)">Reintentar</button>
+      <p role="status" *ngIf="day.result.reason === 'before_publication'; else delayed">Los precios aún no están publicados. Se espera su publicación a las 20:15.</p><ng-template #delayed><p role="status">El proveedor todavía no ha publicado los precios.</p></ng-template><button type="button" (click)="retry(day.selector)">Reintentar</button>
     </ng-container>
     <p *ngSwitchCase="'incomplete'" role="alert">Los datos están incompletos: {{ day.result.receivedIntervalCount }} de {{ day.result.expectedIntervalCount }} intervalos.</p>
     <p *ngSwitchCase="'empty'" role="status">No hay precios disponibles para este día.</p>

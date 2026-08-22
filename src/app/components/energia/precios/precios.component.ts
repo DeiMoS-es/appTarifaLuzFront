@@ -1,7 +1,8 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, Optional } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { PreciosService } from 'src/app/services/precios.service';
 import * as d3 from 'd3';
-import { AvailableResult, Data, DayPriceResult, DaySelector, FailureResult } from 'src/app/interfaces/data';
+import { AvailableResult, Data, DayPriceResult, DaySelector, FailureResult, UnavailableResult } from 'src/app/interfaces/data';
 import { Subscription } from 'rxjs';
 import { buildPriceChartPoints, PriceChartPoint } from './price-chart';
 
@@ -32,6 +33,7 @@ interface PriceSummary {
   styleUrls: ['./precios.component.css'],
 })
 export class PreciosComponent implements OnInit, OnDestroy {
+  @Input() selectedDay: DaySelector = 'today';
   todayDay: DayViewModel = this.loadingDay('today');
   tomorrowDay: DayViewModel = this.loadingDay('tomorrow');
   // Variables
@@ -43,10 +45,15 @@ export class PreciosComponent implements OnInit, OnDestroy {
   precioMaximo: number = 0;
   precioMinimo: number = 0;
   private readonly daySubscriptions: Partial<Record<DaySelector, Subscription>> = {};
+  private routeParamSubscription?: Subscription;
   
-  constructor(private preciosService: PreciosService) {}
+  constructor(private preciosService: PreciosService, @Optional() private route?: ActivatedRoute) {}
 
   ngOnInit() {
+    this.routeParamSubscription = this.route?.paramMap.subscribe(params => {
+      const selectedDay = params.get('selectedDay');
+      if (selectedDay === 'today' || selectedDay === 'tomorrow') this.selectedDay = selectedDay;
+    });
     this.loadDay('today');
     this.loadDay('tomorrow');
   }
@@ -58,6 +65,7 @@ export class PreciosComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.daySubscriptions.today?.unsubscribe();
     this.daySubscriptions.tomorrow?.unsubscribe();
+    this.routeParamSubscription?.unsubscribe();
   }
 
   private loadDay(selector: DaySelector): void {
@@ -130,6 +138,10 @@ export class PreciosComponent implements OnInit, OnDestroy {
 
   availableResult(day: DayViewModel): AvailableResult | null {
     return day.state === 'available' ? day.result : null;
+  }
+
+  unavailableResult(day: DayViewModel): UnavailableResult | null {
+    return day.state === 'unavailable' ? day.result : null;
   }
 
   chartPoints(result: AvailableResult): PriceChartPoint[] {

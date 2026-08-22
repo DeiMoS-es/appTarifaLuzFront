@@ -14,6 +14,8 @@ import {
 import { PreciosService } from 'src/app/services/precios.service';
 import { PreciosComponent } from './precios.component';
 import { TodayPriceComponent } from './today-price.component';
+import { TomorrowPriceComponent } from './tomorrow-price.component';
+import { TomorrowUnavailableComponent } from './tomorrow-unavailable.component';
 
 describe('PreciosComponent', () => {
   let component: PreciosComponent;
@@ -240,12 +242,12 @@ describe('PreciosComponent', () => {
     expect(component.tomorrowDay.result).toBe(unavailableTomorrow);
   });
 
-  describe('two-day presentation', () => {
+  describe('route-selected presentation', () => {
     let fixture: ComponentFixture<PreciosComponent>;
 
     beforeEach(async () => {
       await TestBed.configureTestingModule({
-        imports: [CommonModule, TodayPriceComponent],
+        imports: [CommonModule, TodayPriceComponent, TomorrowPriceComponent, TomorrowUnavailableComponent],
         declarations: [PreciosComponent],
         providers: [{ provide: PreciosService, useValue: { getPrecios } }],
         schemas: [NO_ERRORS_SCHEMA]
@@ -253,40 +255,47 @@ describe('PreciosComponent', () => {
       fixture = TestBed.createComponent(PreciosComponent);
       component = fixture.componentInstance;
       fixture.detectChanges();
-      expect(fixture.nativeElement.querySelectorAll('[role="status"]').length).toBe(2);
+      expect(fixture.nativeElement.querySelectorAll('[role="status"]').length).toBe(1);
       expect(fixture.nativeElement.textContent).toContain('Cargando precios');
     });
 
-    it('presents each day independently and retries only an unavailable day', () => {
+    it('renders only Today by default while preserving independent requests', () => {
       requests.today[0].next(availableToday);
       requests.tomorrow[0].next(unavailableTomorrow);
       fixture.detectChanges();
 
       expect(fixture.nativeElement.textContent).toContain('Hoy');
-      expect(fixture.nativeElement.textContent).toContain('Mañana');
-      expect(fixture.nativeElement.textContent).toContain('Se espera su publicación a las 20:15');
+      expect(fixture.nativeElement.textContent).not.toContain('Mañana');
+      expect(fixture.nativeElement.querySelectorAll('[data-day]')).toHaveSize(1);
+      expect(getPrecios.calls.allArgs()).toEqual([['today'], ['tomorrow']]);
+    });
 
-      const retry = fixture.nativeElement.querySelector('[data-day="tomorrow"] button');
-      retry.click();
+    it('updates to only Tomorrow when the reused route input changes', () => {
+      requests.today[0].next(availableToday);
+      requests.tomorrow[0].next(unavailableTomorrow);
+      fixture.componentRef.setInput('selectedDay', 'tomorrow');
+      fixture.detectChanges();
 
-      expect(getPrecios.calls.allArgs()).toEqual([['today'], ['tomorrow'], ['tomorrow']]);
+      const tomorrow = fixture.nativeElement.querySelector('[data-day="tomorrow"]');
+      expect(fixture.nativeElement.querySelector('[data-day="today"]')).toBeNull();
+      expect(tomorrow.querySelector('h2')).toBeNull();
+      expect(tomorrow.querySelector('[data-notify]').disabled).toBeTrue();
+      expect(tomorrow.textContent).toContain('no se ha programado ninguna notificación');
+      tomorrow.querySelector('[data-retry]').click();
+      expect(getPrecios.calls.mostRecent().args).toEqual(['tomorrow']);
       expect(component.todayDay.result).toBe(availableToday);
     });
 
-    it('uses the Lumina success presentation only for Today while preserving Tomorrow', () => {
+    it('renders the Tomorrow forecast with Today comparison and no Today screen', () => {
       requests.today[0].next(availableToday);
-      requests.tomorrow[0].next(unavailableTomorrow);
+      requests.tomorrow[0].next({ ...availableToday, selector: 'tomorrow' });
+      fixture.componentRef.setInput('selectedDay', 'tomorrow');
       fixture.detectChanges();
 
-      const today = fixture.nativeElement.querySelector('[data-day="today"]');
       const tomorrow = fixture.nativeElement.querySelector('[data-day="tomorrow"]');
-      expect(today.querySelector('[data-today-hero]')?.textContent).toContain('Precio actual');
-      expect(today.querySelector('[aria-label="Gráfico de precios de hoy"]')).not.toBeNull();
-      expect(today.querySelector('[data-today-summary]')?.textContent).toContain('Media diaria');
-      expect(tomorrow.textContent).toContain('Se espera su publicación a las 20:15');
-      tomorrow.querySelector('button').click();
-      expect(getPrecios.calls.mostRecent().args).toEqual(['tomorrow']);
-      expect(component.todayDay.result).toBe(availableToday);
+      expect(tomorrow.querySelectorAll('[data-forecast-card]')).toHaveSize(2);
+      expect(tomorrow.querySelector('[aria-label="Gráfico de previsión de precios de mañana"]')).not.toBeNull();
+      expect(tomorrow.querySelector('[data-today-hero]')).toBeNull();
     });
 
     it('distinguishes provider delay, empty, and failure messages', () => {
@@ -303,9 +312,9 @@ describe('PreciosComponent', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.textContent).toContain('El proveedor todavía no ha publicado los precios');
+      fixture.componentRef.setInput('selectedDay', 'tomorrow');
+      fixture.detectChanges();
       expect(fixture.nativeElement.textContent).toContain('No hay precios disponibles para este día');
-      fixture.nativeElement.querySelector('[data-day="today"] button').click();
-      expect(getPrecios.calls.mostRecent().args).toEqual(['today']);
 
       requests.tomorrow[0].next({
         selector: 'tomorrow', resolvedDate: '2026-08-22', timeZone: 'Europe/Madrid',
