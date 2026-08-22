@@ -13,6 +13,7 @@ import {
 } from 'src/app/interfaces/data';
 import { PreciosService } from 'src/app/services/precios.service';
 import { PreciosComponent } from './precios.component';
+import { TodayPriceComponent } from './today-price.component';
 
 describe('PreciosComponent', () => {
   let component: PreciosComponent;
@@ -244,7 +245,7 @@ describe('PreciosComponent', () => {
 
     beforeEach(async () => {
       await TestBed.configureTestingModule({
-        imports: [CommonModule],
+        imports: [CommonModule, TodayPriceComponent],
         declarations: [PreciosComponent],
         providers: [{ provide: PreciosService, useValue: { getPrecios } }],
         schemas: [NO_ERRORS_SCHEMA]
@@ -269,6 +270,22 @@ describe('PreciosComponent', () => {
       retry.click();
 
       expect(getPrecios.calls.allArgs()).toEqual([['today'], ['tomorrow'], ['tomorrow']]);
+      expect(component.todayDay.result).toBe(availableToday);
+    });
+
+    it('uses the Lumina success presentation only for Today while preserving Tomorrow', () => {
+      requests.today[0].next(availableToday);
+      requests.tomorrow[0].next(unavailableTomorrow);
+      fixture.detectChanges();
+
+      const today = fixture.nativeElement.querySelector('[data-day="today"]');
+      const tomorrow = fixture.nativeElement.querySelector('[data-day="tomorrow"]');
+      expect(today.querySelector('[data-today-hero]')?.textContent).toContain('Precio actual');
+      expect(today.querySelector('[aria-label="Gráfico de precios de hoy"]')).not.toBeNull();
+      expect(today.querySelector('[data-today-summary]')?.textContent).toContain('Media diaria');
+      expect(tomorrow.textContent).toContain('Se espera su publicación a las 20:15');
+      tomorrow.querySelector('button').click();
+      expect(getPrecios.calls.mostRecent().args).toEqual(['tomorrow']);
       expect(component.todayDay.result).toBe(availableToday);
     });
 
@@ -340,7 +357,8 @@ describe('PreciosComponent', () => {
       expect(values).toContain('0,092 €/kWh');
       expect(values).toContain('0,108 €/kWh');
       expect(values).toContain('0,100 €/kWh');
-      expect(today.textContent).toContain('Mejor hora: 00:00');
+      expect(today.querySelector('[data-today-summary]')?.textContent).toContain('Mínimo');
+      expect(today.querySelector('[data-today-summary]')?.textContent).toContain('00:00');
     });
 
     it('renders finite valid meters for zero, negative, and mixed-sign prices', () => {

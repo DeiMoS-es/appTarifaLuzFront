@@ -8,6 +8,7 @@ import { PreciosComponent } from './components/energia/precios/precios.component
 import { HeaderComponent } from './components/shared/header/header.component';
 import { BottomNavigationComponent } from './components/shared/bottom-navigation/bottom-navigation.component';
 import { CardsComponent } from './components/energia/cards/cards.component';
+import { TodayPriceComponent } from './components/energia/precios/today-price.component';
 
 
 @NgModule({
@@ -21,7 +22,8 @@ import { CardsComponent } from './components/energia/cards/cards.component';
     AppRoutingModule,
     HttpClientModule,
     HeaderComponent,
-    BottomNavigationComponent
+    BottomNavigationComponent,
+    TodayPriceComponent
   ],
   providers: [],
   bootstrap: [AppComponent]

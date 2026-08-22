@@ -1,6 +1,13 @@
 <main class="days" aria-label="Precios de la electricidad">
-  <section class="day" data-day="today" aria-labelledby="today-title">
-    <ng-container *ngTemplateOutlet="dayContent; context: { day: todayDay, title: 'Hoy', id: 'today-title' }"></ng-container>
+  <section class="day" [class.today-available]="todayDay.state === 'available'" data-day="today" aria-labelledby="today-title">
+    <ng-container *ngIf="availableResult(todayDay) as result; else todayState">
+      <h2 id="today-title" class="sr-only">Hoy</h2>
+      <p class="sr-only">{{ result.resolvedDate }}</p>
+      <app-today-price [result]="result"></app-today-price>
+    </ng-container>
+    <ng-template #todayState>
+      <ng-container *ngTemplateOutlet="dayContent; context: { day: todayDay, title: 'Hoy', id: 'today-title' }"></ng-container>
+    </ng-template>
   </section>
   <section class="day" data-day="tomorrow" aria-labelledby="tomorrow-title">
     <ng-container *ngTemplateOutlet="dayContent; context: { day: tomorrowDay, title: 'Mañana', id: 'tomorrow-title' }"></ng-container>
