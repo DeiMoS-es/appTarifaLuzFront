@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
-  selector: 'app-header',
+  selector: 'app-bottom-navigation',
   standalone: true,
   imports: [IconComponent],
-  templateUrl: './header.component.html',
+  templateUrl: './bottom-navigation.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class HeaderComponent {}
+export class BottomNavigationComponent {}

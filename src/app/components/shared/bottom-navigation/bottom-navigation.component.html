@@ -1,0 +1,16 @@
+<nav class="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 shadow-[0_-4px_18px_rgba(15,23,42,0.08)] backdrop-blur" aria-label="Navegación principal">
+  <div class="mx-auto grid h-20 max-w-3xl grid-cols-3 px-3">
+    <a class="flex flex-col items-center justify-center gap-1 text-xs font-semibold uppercase tracking-wide text-[#062f6d] no-underline" href="#today-title" aria-label="Ir a los precios de hoy">
+      <app-icon class="h-6 w-6" name="calendar-days"></app-icon>
+      <span>Hoy</span>
+    </a>
+    <a class="flex flex-col items-center justify-center gap-1 text-xs font-medium uppercase tracking-wide text-slate-700 no-underline" href="#tomorrow-title" aria-label="Ir a los precios de mañana">
+      <app-icon class="h-6 w-6" name="calendar-clock"></app-icon>
+      <span>Mañana</span>
+    </a>
+    <button class="flex flex-col items-center justify-center gap-1 border-0 bg-transparent text-xs font-medium uppercase tracking-wide text-slate-400" type="button" aria-label="Historial, próximamente" title="Historial, próximamente" disabled>
+      <app-icon class="h-6 w-6" name="history"></app-icon>
+      <span>Historial</span>
+    </button>
+  </div>
+</nav>

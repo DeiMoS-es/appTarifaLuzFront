@@ -6,7 +6,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { PreciosComponent } from './components/energia/precios/precios.component';
 import { HeaderComponent } from './components/shared/header/header.component';
-import { FooterComponent } from './components/shared/footer/footer.component';
+import { BottomNavigationComponent } from './components/shared/bottom-navigation/bottom-navigation.component';
 import { CardsComponent } from './components/energia/cards/cards.component';
 
 
@@ -14,14 +14,14 @@ import { CardsComponent } from './components/energia/cards/cards.component';
   declarations: [
     AppComponent,
     PreciosComponent,
-    HeaderComponent,
-    FooterComponent,
     CardsComponent,
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
-    HttpClientModule
+    HttpClientModule,
+    HeaderComponent,
+    BottomNavigationComponent
   ],
   providers: [],
   bootstrap: [AppComponent]
