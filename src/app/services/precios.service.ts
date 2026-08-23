@@ -7,9 +7,17 @@ import { DayPriceResult, DaySelector, LegacyPriceResponse } from '../interfaces/
   providedIn: 'root'
 })
 export class PreciosService {
-  private readonly baseUrl = 'https://app-tarifa-luz-back.vercel.app/api/precios';
-  // Local development: http://localhost:3000/api/precios
-
+  private get baseUrl(): string {
+    try {
+      const host = window && (window.location && window.location.hostname) ? window.location.hostname : '';
+      const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '';
+      return isLocal
+        ? 'http://localhost:3000/api/precios'
+        : 'https://app-tarifa-luz-back.vercel.app/api/precios';
+    } catch {
+      return 'https://app-tarifa-luz-back.vercel.app/api/precios';
+    }
+  }
 
   constructor(private httpClient: HttpClient) { }
 

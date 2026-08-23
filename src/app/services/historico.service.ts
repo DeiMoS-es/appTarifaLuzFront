@@ -5,14 +5,16 @@ import { HistoricoResponse } from '../interfaces/data';
 
 @Injectable({ providedIn: 'root' })
 export class HistoricoService {
-  // Base URL: use localhost:3000 when running locally (dev), otherwise use relative API path so production calls the same host
+  // Base URL: localhost for local development, exact Vercel backend URL for production.
   private get baseUrl(): string {
     try {
       const host = window && (window.location && window.location.hostname) ? window.location.hostname : '';
       const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '';
-      return isLocal ? 'http://localhost:3000/api/historico' : '/api/historico';
+      return isLocal
+        ? 'http://localhost:3000/api/historico'
+        : 'https://app-tarifa-luz-back.vercel.app/api/historico';
     } catch {
-      return '/api/historico';
+      return 'https://app-tarifa-luz-back.vercel.app/api/historico';
     }
   }
 
