@@ -11,23 +11,25 @@ import { CardsComponent } from './components/energia/cards/cards.component';
 import { TodayPriceComponent } from './components/energia/precios/today-price.component';
 import { TomorrowPriceComponent } from './components/energia/precios/tomorrow-price.component';
 import { TomorrowUnavailableComponent } from './components/energia/precios/tomorrow-unavailable.component';
-
+import { HistoricoComponent } from './components/energia/historico.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     PreciosComponent,
     CardsComponent,
+    HistoricoComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    HeaderComponent,
-    BottomNavigationComponent,
+    // These components are standalone — import them instead of declaring
     TodayPriceComponent,
     TomorrowPriceComponent,
-    TomorrowUnavailableComponent
+    TomorrowUnavailableComponent,
+    HeaderComponent,
+    BottomNavigationComponent
   ],
   providers: [],
   bootstrap: [AppComponent]

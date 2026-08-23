@@ -1,0 +1,49 @@
+:host { display: block; font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; color: #042037; }
+.hist-wrap { padding: 18px; max-width: 430px; margin: 0 auto 80px; }
+.segmented { display:flex; gap:8px; background:#f3f4f6; padding:8px; border-radius:12px; width:100%; margin-bottom:16px; }
+.segmented button { flex:1; background:transparent; border:0; padding:10px 12px; border-radius:8px; color:#6b7280; font-weight:600; }
+.segmented button.active { background:white; color:#042037; box-shadow: 0 2px 0 rgba(6, 37, 83, 0.06); }
+.card { background:white; border-radius:14px; padding:16px; box-shadow: 0 6px 18px rgba(6,37,83,0.06); margin-bottom:16px; border:1px solid rgba(11,74,139,0.03); overflow:hidden; }
+.evolution-card .card-header { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:8px; }
+.title { font-size:20px; font-weight:700; color:#0b4a8b; }
+.subtitle { font-size:13px; color:#6b7280; }
+.big-metric { font-size:36px; font-weight:800; color:#062f6d; }
+.chart-area { padding-top:6px; position:relative; }
+.chart-svg { width:100%; height:160px; display:block; }
+.xlabel { fill:#9aa6b2; font-size:11px; font-weight:700; }
+.insight { display:flex; align-items:center; gap:12px; background:#cfe3ff; color:#042037; padding:16px; border-radius:12px; }
+.chart-tooltip { position:absolute; pointer-events:auto; background:rgba(6,37,83,0.95); color:white; padding:8px 10px; border-radius:8px; font-size:12px; min-width:140px; box-shadow:0 6px 18px rgba(6,37,83,0.12); z-index:10; }
+.chart-tooltip .tt-date { font-weight:700; margin-bottom:6px; }
+.chart-tooltip .tt-row { font-size:12px; color:#e6f0fb; margin-bottom:2px; }
+/* small diamond arrow rotated 45deg positioned at bottom of tooltip */
+.chart-tooltip .tt-arrow { position:absolute; width:12px; height:12px; background:rgba(6,37,83,0.95); transform:translateY(-50%) rotate(45deg); border-radius:2px; top:100%; }
+@media (pointer: coarse) {
+  /* on touch devices make tooltip easier to interact with */
+  .chart-tooltip { pointer-events:auto; }
+}
+
+.insight-icon { font-size:28px; width:52px; height:52px; background:white; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.insight-title { font-weight:700; }
+.insight-text { color:#0b4a8b; }
+.section-title { font-weight:700; margin:8px 0 8px 4px; }
+.daily-list { display:flex; flex-direction:column; gap:12px; }
+.daily-item { display:flex; align-items:center; position:relative; padding:12px; }
+.daily-item .stripe { width:6px; height:56px; border-radius:6px; margin-right:12px; }
+.daily-main { display:flex; flex:1; align-items:center; justify-content:space-between; gap:12px; }
+.day-meta { display:flex; gap:8px; align-items:center; }
+.day-num { font-weight:800; font-size:18px; }
+.day-txt { font-size:12px; color:#6b7280; text-transform:uppercase; }
+.day-value { font-weight:800; font-size:18px; color:#062f6d; }
+.day-note { font-size:12px; color:#6b7280; display:flex; align-items:center; gap:6px; }
+.day-note .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+.chev { color:#9aa6b2; font-size:22px; margin-left:8px; }
+.load-more { padding:8px 0; }
+.load-btn { width:100%; padding:12px; border-radius:10px; border:1px solid rgba(6,37,83,0.08); background:transparent; font-weight:700; color:#062f6d; }
+.loading { padding:16px; color:#6b7280; }
+.error { padding:16px; color:#b91c1c; }
+
+/* Axis and grid styles */
+.ylabel { fill:#7f8b95; font-size:11px; font-weight:700; }
+.gridline { stroke:#eef3f8; }
+.xlabels .xlabel { font-size:11px; fill:#9aa6b2; font-weight:700; }
+@media (max-width: 480px) { .hist-wrap { padding:12px; } }

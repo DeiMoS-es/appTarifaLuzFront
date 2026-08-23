@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes, UrlMatcher, UrlSegment } from '@angular/router';
 import { PreciosComponent } from './components/energia/precios/precios.component';
+import { HistoricoComponent } from './components/energia/historico.component';
 import { DaySelector } from './interfaces/data';
 
 export const dayMatcher: UrlMatcher = segments => {
@@ -18,7 +19,8 @@ export const dayMatcher: UrlMatcher = segments => {
 export const routes: Routes = [
   { path: '', redirectTo: '/hoy', pathMatch: 'full' },
   { path: 'precios', redirectTo: '/hoy', pathMatch: 'full' },
-  { matcher: dayMatcher, component: PreciosComponent }
+  { matcher: dayMatcher, component: PreciosComponent },
+  { path: 'historico', component: HistoricoComponent }
 ];
 
 @NgModule({

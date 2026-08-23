@@ -88,3 +88,16 @@ export type DayPriceResult =
   | IncompleteResult
   | EmptyResult
   | FailureResult;
+
+// Modelo para histórico diario usado por /api/historico
+export interface PrecioDiario {
+  fecha: string; // YYYY-MM-DD
+  media: number | null;
+  minimo: number | null;
+  maximo: number | null;
+}
+
+export interface HistoricoResponse {
+  range: 'semana' | 'mes' | 'anio';
+  values: PrecioDiario[];
+}

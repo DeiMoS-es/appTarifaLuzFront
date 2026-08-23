@@ -1,0 +1,108 @@
+<div class="hist-wrap">
+  <div class="segmented">
+    <button (click)="select('semana')" [class.active]="range==='semana'">Semana</button>
+    <button (click)="select('mes')" [class.active]="range==='mes'">Mes</button>
+    <button (click)="select('anio')" [class.active]="range==='anio'">Año</button>
+  </div>
+
+  <div *ngIf="loading" class="loading">Cargando datos...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <div *ngIf="!loading && !error" class="content">
+    <div class="card evolution-card">
+      <div class="card-header">
+        <div>
+          <div class="title">Evolución</div>
+          <div class="subtitle">Media últimos {{ range === 'semana' ? '7 días' : (range === 'mes' ? '30 días' : '365 días') }}</div>
+        </div>
+        <div class="big-metric">{{ formatCurrency(overallAverage()) }}</div>
+      </div>
+
+      <div class="chart-area">
+        <svg viewBox="0 0 600 200" preserveAspectRatio="xMidYMid meet" class="chart-svg">
+          <defs>
+            <linearGradient id="fillGrad" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#e6f0fb" stop-opacity="0.8" />
+              <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+
+          <path [attr.d]="chartPath" fill="none" stroke="#0b4a8b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></path>
+          <g *ngFor="let p of chartPoints; let idx = index">
+            <circle [attr.cx]="p.x" [attr.cy]="p.y" r="4" fill="#fff" stroke="#0b4a8b" stroke-width="2"
+              (mouseenter)="showTooltipAtPoint(p, $event)" (mouseleave)="hideTooltip()" (mousemove)="showTooltipAtPoint(p,$event)"
+              (touchstart)="onTouchPoint(p,$event)" (click)="onPointClick(p)"></circle>
+            <!-- larger invisible hit area for easier touch -->
+            <circle [attr.cx]="p.x" [attr.cy]="p.y" r="12" fill="transparent" (mouseenter)="showTooltipAtPoint(p,$event)" (mouseleave)="hideTooltip()" (mousemove)="showTooltipAtPoint(p,$event)" (touchstart)="onTouchPoint(p,$event)" (click)="onPointClick(p)"></circle>
+          </g>
+
+          <!-- area fill under curve - simple polygon approximation -->
+          <path *ngIf="chartPoints.length>0" [attr.d]="('M ' + chartPoints[0].x + ' ' + chartPoints[0].y + ' ' + chartPath + ' L ' + chartPoints[chartPoints.length-1].x + ' 200 L ' + chartPoints[0].x + ' 200 Z')" fill="url(#fillGrad)" opacity="0.8"></path>
+
+          <!-- gridlines and Y axis labels -->
+          <g *ngIf="chartPoints.length>0">
+            <g *ngFor="let y of chartYAxisTicks">
+              <line x1="0" [attr.x2]="600" [attr.y1]="y.y" [attr.y2]="y.y" stroke="#e9eef5" stroke-width="1"></line>
+              <text x="6" [attr.y]="y.y - 6" class="ylabel">{{ y.label }}</text>
+            </g>
+
+            <!-- X axis ticks (sparser) -->
+            <g class="xlabels">
+              <line x1="30" x2="570" y1="190" y2="190" stroke="#d6dbe1" stroke-width="6" stroke-linecap="round"></line>
+              <g *ngFor="let t of chartXAxisTicks">
+                <line [attr.x1]="t.x" y1="185" [attr.x2]="t.x" y2="190" stroke="#bfc9d3" stroke-width="1"></line>
+                <text [attr.x]="t.x" y="198" text-anchor="middle" class="xlabel">{{ t.label }}</text>
+              </g>
+            </g>
+          </g>
+        </svg>
+
+        <div class="chart-tooltip" *ngIf="tooltipVisible" [style.left.px]="tooltipX" [style.top.px]="tooltipY">
+          <div class="tt-arrow" [style.left.px]="tooltipArrowX"></div>
+          <div class="tt-date">{{ tooltipMeta?.dateText }}</div>
+          <div class="tt-row">Media: <strong>{{ tooltipMeta?.avgText }}</strong></div>
+          <div class="tt-row">Mín: {{ tooltipMeta?.minText }} • Máx: {{ tooltipMeta?.maxText }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight card">
+      <div class="insight-icon">📈</div>
+      <div class="insight-body">
+        <div class="insight-title">Buen ritmo</div>
+        <div class="insight-text">Esta semana la media ha sido un <strong>12% más barata</strong> que la anterior.</div>
+      </div>
+    </div>
+
+    <h3 class="section-title">Desglose Diario</h3>
+    <div *ngIf="selectedWeekDays && selectedWeekDays.length" class="card">
+      <div class="mb-2 font-semibold">Detalle de semana iniciada {{ selectedWeekStart }}</div>
+      <div class="daily-list">
+        <div *ngFor="let v of selectedWeekDays" class="daily-item card">
+          <div class="stripe" [style.background]="statusColorFor(v)"></div>
+          <div class="daily-main">
+            <div class="day-meta"><div class="day-num">{{ dayNumber(v.fecha) }}</div><div class="day-txt">{{ dayLabel(v.fecha) }}</div></div>
+            <div class="day-value">{{ formatCurrency(v.media) }}</div>
+            <div class="day-note"><span class="dot" [style.background]="statusColorFor(v)"></span> {{ statusLabel(v) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="daily-list">
+      <div *ngFor="let v of displayValues; let i = index" class="daily-item card">
+        <div class="stripe" [style.background]="statusColorFor(v)"></div>
+        <div class="daily-main">
+          <div class="day-meta"><div class="day-num">{{ dayNumber(v.fecha) }}</div><div class="day-txt">{{ dayLabel(v.fecha) }}</div></div>
+          <div class="day-value">{{ formatCurrency(v.media) }}</div>
+          <div class="day-note"><span class="dot" [style.background]="statusColorFor(v)"></span> {{ statusLabel(v) }}</div>
+        </div>
+        <div class="chev">›</div>
+      </div>
+    </div>
+
+    <div class="load-more">
+      <button class="load-btn">Cargar semanas anteriores ▾</button>
+    </div>
+  </div>
+</div>
