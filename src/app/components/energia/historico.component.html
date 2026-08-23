@@ -1,4 +1,11 @@
 <div class="hist-wrap">
+  <div class="zone-selector" *ngIf="false">
+    <label for="historico-zone">Zona</label>
+    <select id="historico-zone" [ngModel]="selectedZone" (ngModelChange)="changeZone($event)">
+      <option *ngFor="let zone of zones" [value]="zone">{{ zone === 'peninsular' ? 'Península' : zone === 'canarias' ? 'Canarias' : zone === 'baleares' ? 'Baleares' : zone === 'ceuta' ? 'Ceuta' : 'Melilla' }}</option>
+    </select>
+  </div>
+
   <div class="segmented">
     <button (click)="select('semana')" [class.active]="range==='semana'">Semana</button>
     <button (click)="select('mes')" [class.active]="range==='mes'">Mes</button>
@@ -66,7 +73,7 @@
       </div>
     </div>
 
-    <div class="insight card">
+    <div class="insight card" style="--card-accent: #0ea5e9;">
       <div class="insight-icon">📈</div>
       <div class="insight-body">
         <div class="insight-title">{{ insightSummary().title }}</div>
@@ -75,10 +82,10 @@
     </div>
 
     <h3 class="section-title">Desglose Diario</h3>
-    <div *ngIf="selectedWeekDays && selectedWeekDays.length" class="card">
+    <div *ngIf="selectedWeekDays && selectedWeekDays.length" class="card" style="--card-accent: #8b5cf6;">
       <div class="mb-2 font-semibold">Detalle de semana iniciada {{ selectedWeekStart }}</div>
       <div class="daily-list">
-        <div *ngFor="let v of selectedWeekDays" class="daily-item card">
+        <div *ngFor="let v of selectedWeekDays" class="daily-item card" [style.--card-accent]="statusColorFor(v)">
           <div class="stripe" [style.background]="statusColorFor(v)"></div>
           <div class="daily-main">
             <div class="day-meta"><div class="day-num">{{ dayNumber(v.fecha) }}</div><div class="day-txt">{{ dayLabel(v.fecha) }}</div></div>
@@ -90,7 +97,7 @@
     </div>
 
     <div class="daily-list">
-      <div *ngFor="let v of displayValues; let i = index" class="daily-item card">
+      <div *ngFor="let v of displayValues; let i = index" class="daily-item card" [style.--card-accent]="statusColorFor(v)">
         <div class="stripe" [style.background]="statusColorFor(v)"></div>
         <div class="daily-main">
           <div class="day-meta"><div class="day-num">{{ dayNumber(v.fecha) }}</div><div class="day-txt">{{ dayLabel(v.fecha) }}</div></div>

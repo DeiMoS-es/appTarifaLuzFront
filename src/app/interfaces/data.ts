@@ -8,6 +8,7 @@ export interface LegacyPriceResponse {
 }
 
 export type DaySelector = 'today' | 'tomorrow';
+export type PriceZone = 'peninsular' | 'canarias' | 'baleares' | 'ceuta' | 'melilla';
 
 export interface ResultError {
   code: 'transport' | 'timeout' | 'provider' | 'malformed_payload';

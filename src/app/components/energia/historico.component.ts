@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { HistoricoService } from 'src/app/services/historico.service';
-import { PrecioDiario } from 'src/app/interfaces/data';
+import { PrecioDiario, PriceZone } from 'src/app/interfaces/data';
 
 type Range = 'semana' | 'mes' | 'anio';
 
@@ -11,6 +11,8 @@ type Range = 'semana' | 'mes' | 'anio';
 })
 export class HistoricoComponent implements OnInit {
   range: Range = 'semana';
+  selectedZone: PriceZone = 'peninsular';
+  readonly zones: PriceZone[] = ['peninsular', 'canarias', 'baleares', 'ceuta', 'melilla'];
   loading = false;
   error: string | null = null;
   values: PrecioDiario[] = [];
@@ -51,13 +53,19 @@ export class HistoricoComponent implements OnInit {
     this.load(range);
   }
 
+  changeZone(zone: PriceZone): void {
+    if (this.selectedZone === zone) return;
+    this.selectedZone = zone;
+    this.load(this.range);
+  }
+
   private load(range: Range) {
     this.loading = true;
     this.error = null;
     this.values = [];
-    const obs = range === 'semana' ? this.historicoService.getSemana()
-      : range === 'mes' ? this.historicoService.getMes()
-      : this.historicoService.getAnio();
+    const obs = range === 'semana' ? this.historicoService.getSemana(this.selectedZone)
+      : range === 'mes' ? this.historicoService.getMes(this.selectedZone)
+      : this.historicoService.getAnio(this.selectedZone);
 
     obs.subscribe({
       next: resp => {
@@ -264,7 +272,7 @@ export class HistoricoComponent implements OnInit {
     }
     this.selectedWeekStart = start;
     try {
-      const resp = await this.historicoService.getWeek(start).toPromise();
+      const resp = await this.historicoService.getWeek(start, this.selectedZone).toPromise();
       this.selectedWeekDays = (resp && resp.values) ? resp.values : [];
     } catch (err) {
       this.selectedWeekDays = null;

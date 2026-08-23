@@ -2,7 +2,7 @@ import { Component, Input, OnDestroy, OnInit, Optional } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { PreciosService } from 'src/app/services/precios.service';
 import * as d3 from 'd3';
-import { AvailableResult, Data, DayPriceResult, DaySelector, FailureResult, UnavailableResult } from 'src/app/interfaces/data';
+import { AvailableResult, Data, DayPriceResult, DaySelector, FailureResult, PriceZone, UnavailableResult } from 'src/app/interfaces/data';
 import { Subscription } from 'rxjs';
 import { buildPriceChartPoints, PriceChartPoint } from './price-chart';
 
@@ -34,6 +34,8 @@ interface PriceSummary {
 })
 export class PreciosComponent implements OnInit, OnDestroy {
   @Input() selectedDay: DaySelector = 'today';
+  selectedZone: PriceZone = 'peninsular';
+  readonly zones: PriceZone[] = ['peninsular', 'canarias', 'baleares', 'ceuta', 'melilla'];
   todayDay: DayViewModel = this.loadingDay('today');
   tomorrowDay: DayViewModel = this.loadingDay('tomorrow');
   // Variables
@@ -62,6 +64,13 @@ export class PreciosComponent implements OnInit, OnDestroy {
     this.loadDay(selector);
   }
 
+  changeZone(zone: PriceZone): void {
+    if (this.selectedZone === zone) return;
+    this.selectedZone = zone;
+    this.loadDay('today');
+    this.loadDay('tomorrow');
+  }
+
   ngOnDestroy(): void {
     this.daySubscriptions.today?.unsubscribe();
     this.daySubscriptions.tomorrow?.unsubscribe();
@@ -71,9 +80,10 @@ export class PreciosComponent implements OnInit, OnDestroy {
   private loadDay(selector: DaySelector): void {
     this.daySubscriptions[selector]?.unsubscribe();
     this.setDay(selector, this.loadingDay(selector));
-    this.daySubscriptions[selector] = this.preciosService.getPrecios(selector).subscribe({
+    this.daySubscriptions[selector] = this.preciosService.getPrecios(selector, this.selectedZone).subscribe({
       next: result => {
-        this.setDay(selector, this.loadedDay(selector, result));
+        const typedResult = result as unknown as DayPriceResult;
+        this.setDay(selector, this.loadedDay(selector, typedResult));
       },
       error: response => {
         const failure = this.failureFrom(response, selector);

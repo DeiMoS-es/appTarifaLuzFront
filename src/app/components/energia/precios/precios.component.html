@@ -1,4 +1,11 @@
 <main class="days" aria-label="Precios de la electricidad">
+  <div class="zone-selector" *ngIf="false">
+    <label for="price-zone">Zona</label>
+    <select id="price-zone" [ngModel]="selectedZone" (ngModelChange)="changeZone($event)">
+      <option *ngFor="let zone of zones" [value]="zone">{{ zone === 'peninsular' ? 'Península' : zone === 'canarias' ? 'Canarias' : zone === 'baleares' ? 'Baleares' : zone === 'ceuta' ? 'Ceuta' : 'Melilla' }}</option>
+    </select>
+  </div>
+
   <section *ngIf="selectedDay === 'today'" class="day" [class.today-available]="todayDay.state === 'available'" data-day="today" aria-labelledby="today-title">
     <ng-container *ngIf="availableResult(todayDay) as result; else todayState">
       <h2 id="today-title" class="sr-only">Hoy</h2>

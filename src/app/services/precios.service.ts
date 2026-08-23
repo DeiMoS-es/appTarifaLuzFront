@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { DayPriceResult, DaySelector, LegacyPriceResponse } from '../interfaces/data';
+import { DayPriceResult, DaySelector, LegacyPriceResponse, PriceZone } from '../interfaces/data';
 
 @Injectable({
   providedIn: 'root'
@@ -24,16 +24,17 @@ export class PreciosService {
   constructor(private httpClient: HttpClient) { }
 
   public getPrecios(): Observable<LegacyPriceResponse>;
-  public getPrecios(selector: DaySelector): Observable<DayPriceResult>;
-  public getPrecios(selector?: DaySelector): Observable<LegacyPriceResponse | DayPriceResult> {
+  public getPrecios(selector: DaySelector, zone?: PriceZone): Observable<DayPriceResult>;
+  public getPrecios(selector?: DaySelector, zone: PriceZone = 'peninsular'): Observable<LegacyPriceResponse | DayPriceResult> {
     const url = `${this.apiBase}/precios`;
+    const isDaySelector = selector === 'today' || selector === 'tomorrow';
 
-    if (!selector) {
-      return this.httpClient.get<LegacyPriceResponse>(url);
+    if (!selector || !isDaySelector) {
+      return this.httpClient.get<LegacyPriceResponse>(url, { params: { zone } });
     }
 
     return this.httpClient.get<DayPriceResult>(url, {
-      params: { day: selector }
+      params: { day: selector, zone }
     });
   }
 }

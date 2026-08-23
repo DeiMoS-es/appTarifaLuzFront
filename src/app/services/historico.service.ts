@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { HistoricoResponse } from '../interfaces/data';
+import { HistoricoResponse, PriceZone } from '../interfaces/data';
 
 @Injectable({ providedIn: 'root' })
 export class HistoricoService {
@@ -21,20 +21,20 @@ export class HistoricoService {
 
   constructor(private http: HttpClient) {}
 
-  getSemana(): Observable<HistoricoResponse> {
-    return this.http.get<HistoricoResponse>(`${this.apiBase}/historico/semana`);
+  getSemana(zone: PriceZone = 'peninsular'): Observable<HistoricoResponse> {
+    return this.http.get<HistoricoResponse>(`${this.apiBase}/historico/semana`, { params: { zone } });
   }
 
-  getMes(): Observable<HistoricoResponse> {
-    return this.http.get<HistoricoResponse>(`${this.apiBase}/historico/mes`);
+  getMes(zone: PriceZone = 'peninsular'): Observable<HistoricoResponse> {
+    return this.http.get<HistoricoResponse>(`${this.apiBase}/historico/mes`, { params: { zone } });
   }
 
-  getAnio(): Observable<HistoricoResponse> {
-    return this.http.get<HistoricoResponse>(`${this.apiBase}/historico/anio`);
+  getAnio(zone: PriceZone = 'peninsular'): Observable<HistoricoResponse> {
+    return this.http.get<HistoricoResponse>(`${this.apiBase}/historico/anio`, { params: { zone } });
   }
 
   // Get the 7 days for a given week start YYYY-MM-DD
-  getWeek(start: string): Observable<HistoricoResponse & { start: string } > {
-    return this.http.get<HistoricoResponse & { start: string }>(`${this.apiBase}/historico/week`, { params: { start } });
+  getWeek(start: string, zone: PriceZone = 'peninsular'): Observable<HistoricoResponse & { start: string } > {
+    return this.http.get<HistoricoResponse & { start: string }>(`${this.apiBase}/historico/week`, { params: { start, zone } });
   }
 }

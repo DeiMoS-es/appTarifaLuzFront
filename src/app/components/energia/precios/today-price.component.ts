@@ -13,7 +13,7 @@ import { buildTodayPriceViewModel, TodayPriceViewModel } from './today-price';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="grid gap-5" *ngIf="view">
-      <article class="overflow-hidden rounded-[18px] border border-t-4 border-slate-100 bg-white px-6 py-7 shadow-[0_8px_24px_rgba(15,23,42,0.07)]" style="border-top-color:#0ea5e9" data-today-hero aria-labelledby="current-price-title">
+      <article class="overflow-hidden rounded-[18px] border border-slate-100 bg-white px-6 py-7 shadow-[0_8px_24px_rgba(15,23,42,0.07)]" data-today-hero aria-labelledby="current-price-title">
         <p id="current-price-title" class="m-0 text-sm font-semibold uppercase tracking-[0.14em] text-slate-700"><span class="mr-2 text-sky-500" aria-hidden="true">✓</span>Precio actual</p>
         <p class="my-5 text-[3.2rem] font-extrabold leading-none tracking-tight text-slate-950" *ngIf="view.currentPrice; else noCurrent">{{ view.currentPrice }} <span class="text-lg font-medium text-slate-700">€/kWh</span></p>
         <ng-template #noCurrent><p class="my-5 text-2xl font-bold text-slate-800">No disponible</p></ng-template>
@@ -39,8 +39,8 @@ import { buildTodayPriceViewModel, TodayPriceViewModel } from './today-price';
       </section>
 
       <dl class="grid grid-cols-2 gap-4" data-today-summary>
-        <div class="rounded-[16px] border-t-4 border-sky-400 bg-white p-4 shadow-sm"><dt class="text-sm font-medium text-slate-700">↓ Mínimo</dt><dd class="mb-0 ml-0 mt-3 font-mono text-2xl font-bold">{{ view.summary.minimum }} <small class="text-xs">€/kWh</small></dd><p class="mb-0 mt-3 text-xs text-slate-500">◷ {{ view.summary.minimumTime }}</p></div>
-        <div class="rounded-[16px] border-t-4 border-red-500 bg-white p-4 shadow-sm"><dt class="text-sm font-medium text-slate-700">↑ Máximo</dt><dd class="mb-0 ml-0 mt-3 font-mono text-2xl font-bold">{{ view.summary.maximum }} <small class="text-xs">€/kWh</small></dd><p class="mb-0 mt-3 text-xs text-slate-500">◷ {{ view.summary.maximumTime }}</p></div>
+        <div class="rounded-[16px] bg-white p-4 shadow-sm" style="border-top: 4px solid #38bdf8;"><dt class="text-sm font-medium text-slate-700">↓ Mínimo</dt><dd class="mb-0 ml-0 mt-3 font-mono text-2xl font-bold">{{ view.summary.minimum }} <small class="text-xs">€/kWh</small></dd><p class="mb-0 mt-3 text-xs text-slate-500">◷ {{ view.summary.minimumTime }}</p></div>
+        <div class="rounded-[16px] bg-white p-4 shadow-sm" style="border-top: 4px solid #ef4444;"><dt class="text-sm font-medium text-slate-700">↑ Máximo</dt><dd class="mb-0 ml-0 mt-3 font-mono text-2xl font-bold">{{ view.summary.maximum }} <small class="text-xs">€/kWh</small></dd><p class="mb-0 mt-3 text-xs text-slate-500">◷ {{ view.summary.maximumTime }}</p></div>
         <div class="col-span-2 grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-[16px] bg-slate-200 p-4"><span class="text-2xl" aria-hidden="true">Σ</span><div><dt class="text-sm font-semibold text-slate-700">Media diaria</dt><p class="m-0 text-xs text-slate-500">Promedio de 24h</p></div><dd class="m-0 font-mono text-xl font-bold">{{ view.summary.average }} <small class="text-xs">€/kWh</small></dd></div>
       </dl>
     </div>
