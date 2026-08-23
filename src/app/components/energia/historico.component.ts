@@ -288,10 +288,70 @@ export class HistoricoComponent implements OnInit {
     }
   }
 
-  overallAverage(): number | null {
-    const nums = this.values.map(v => v.media).filter(n => n !== null) as number[];
+  averageFor(values: PrecioDiario[]): number | null {
+    const nums = values.map(v => v.media).filter(n => n !== null) as number[];
     if (nums.length === 0) return null;
     return nums.reduce((a, b) => a + b, 0) / nums.length;
+  }
+
+  insightSummary(): { title: string; text: string } {
+    if (this.values.length < 2) {
+      return {
+        title: 'Resumen',
+        text: 'No hay suficiente información para comparar tendencias.'
+      };
+    }
+
+    const pivot = (() => {
+      switch (this.range) {
+        case 'semana':
+          return Math.max(2, Math.ceil(this.values.length / 2));
+        case 'mes':
+          return Math.max(5, Math.ceil(this.values.length / 2));
+        case 'anio':
+          return Math.ceil(this.values.length / 2);
+        default:
+          return Math.ceil(this.values.length / 2);
+      }
+    })();
+
+    const previous = this.values.slice(0, pivot);
+    const current = this.values.slice(pivot);
+    const previousAvg = this.averageFor(previous);
+    const currentAvg = this.averageFor(current);
+
+    if (previousAvg === null || currentAvg === null) {
+      return {
+        title: 'Resumen',
+        text: 'Todavía no hay datos suficientes para comparar.'
+      };
+    }
+
+    const delta = ((currentAvg - previousAvg) / previousAvg) * 100;
+    const abs = Math.abs(delta);
+
+    if (delta < -5) {
+      return {
+        title: 'Buen ritmo',
+        text: `La media de ${this.range === 'semana' ? 'esta semana' : this.range === 'mes' ? 'este mes' : 'este año'} ha sido un <strong>${abs.toFixed(1)}% más barata</strong> que la anterior.`
+      };
+    }
+
+    if (delta > 5) {
+      return {
+        title: 'Más cara',
+        text: `La media de ${this.range === 'semana' ? 'esta semana' : this.range === 'mes' ? 'este mes' : 'este año'} ha sido un <strong>${abs.toFixed(1)}% más cara</strong> que la anterior.`
+      };
+    }
+
+    return {
+      title: 'Estable',
+      text: `La media de ${this.range === 'semana' ? 'esta semana' : this.range === 'mes' ? 'este mes' : 'este año'} está <strong>muy cercana</strong> a la anterior (${abs.toFixed(1)}% de diferencia).`
+    };
+  }
+
+  overallAverage(): number | null {
+    return this.averageFor(this.values);
   }
 
   overallMin(): number | null {

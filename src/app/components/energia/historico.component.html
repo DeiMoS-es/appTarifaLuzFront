@@ -69,8 +69,8 @@
     <div class="insight card">
       <div class="insight-icon">📈</div>
       <div class="insight-body">
-        <div class="insight-title">Buen ritmo</div>
-        <div class="insight-text">Esta semana la media ha sido un <strong>12% más barata</strong> que la anterior.</div>
+        <div class="insight-title">{{ insightSummary().title }}</div>
+        <div class="insight-text" [innerHTML]="insightSummary().text"></div>
       </div>
     </div>
 
