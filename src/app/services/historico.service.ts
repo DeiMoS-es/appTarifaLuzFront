@@ -5,8 +5,16 @@ import { HistoricoResponse } from '../interfaces/data';
 
 @Injectable({ providedIn: 'root' })
 export class HistoricoService {
-  // Usar entorno local durante el desarrollo
-  private readonly baseUrl = 'http://localhost:3000/api/historico';
+  // Base URL: use localhost:3000 when running locally (dev), otherwise use relative API path so production calls the same host
+  private get baseUrl(): string {
+    try {
+      const host = window && (window.location && window.location.hostname) ? window.location.hostname : '';
+      const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '';
+      return isLocal ? 'http://localhost:3000/api/historico' : '/api/historico';
+    } catch {
+      return '/api/historico';
+    }
+  }
 
   constructor(private http: HttpClient) {}
 
