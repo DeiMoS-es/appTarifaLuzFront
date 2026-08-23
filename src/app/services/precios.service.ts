@@ -7,15 +7,17 @@ import { DayPriceResult, DaySelector, LegacyPriceResponse } from '../interfaces/
   providedIn: 'root'
 })
 export class PreciosService {
-  private get baseUrl(): string {
+  private readonly apiBase = this.getApiBase();
+
+  private getApiBase(): string {
     try {
       const host = window && (window.location && window.location.hostname) ? window.location.hostname : '';
       const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '';
       return isLocal
-        ? 'http://localhost:3000/api/precios'
-        : 'https://app-tarifa-luz-back.vercel.app/api/precios';
+        ? 'http://localhost:3000/api'
+        : 'https://app-tarifa-luz-back.vercel.app/api';
     } catch {
-      return 'https://app-tarifa-luz-back.vercel.app/api/precios';
+      return 'https://app-tarifa-luz-back.vercel.app/api';
     }
   }
 
@@ -24,11 +26,13 @@ export class PreciosService {
   public getPrecios(): Observable<LegacyPriceResponse>;
   public getPrecios(selector: DaySelector): Observable<DayPriceResult>;
   public getPrecios(selector?: DaySelector): Observable<LegacyPriceResponse | DayPriceResult> {
+    const url = `${this.apiBase}/precios`;
+
     if (!selector) {
-      return this.httpClient.get<LegacyPriceResponse>(this.baseUrl);
+      return this.httpClient.get<LegacyPriceResponse>(url);
     }
 
-    return this.httpClient.get<DayPriceResult>(this.baseUrl, {
+    return this.httpClient.get<DayPriceResult>(url, {
       params: { day: selector }
     });
   }
