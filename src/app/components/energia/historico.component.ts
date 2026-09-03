@@ -72,8 +72,17 @@ export class HistoricoComponent implements OnInit {
       next: resp => {
         try {
           this.values = resp.values || [];
+          // Log incoming response for debugging (mostrar en consola qué llega desde el backend)
+          try { console.log('[historico] resp', resp); } catch(e) {}
+          try { console.log('[historico] values length', (this.values && this.values.length) || 0, 'sample', (this.values || []).slice(0,5)); } catch(e) {}
+
           // keep chart data chronological (oldest -> newest)
           this.buildChart();
+
+          // Log chart internals after build to understand qué se está pintando
+          try { console.log('[historico] chartPoints', this.chartPoints); } catch(e) {}
+          try { console.log('[historico] chartPath (len)', this.chartPath ? this.chartPath.length : 0, 'chartAreaPath (len)', this.chartAreaPath ? this.chartAreaPath.length : 0); } catch(e) {}
+
           // reverse a copy for list display so newest appears first
           this.displayValues = [...this.values].reverse();
           this.selectedWeekDays = null;
@@ -170,6 +179,11 @@ export class HistoricoComponent implements OnInit {
     }
     // flush last
     pushSegmentPath(segmentPoints);
+
+    // Debug: log numeric summary and generated segments for inspection
+    try { console.log('[historico] finiteNums', finiteNums); } catch(e) {}
+    try { console.log('[historico] min/max/span', min, max, span); } catch(e) {}
+    try { console.log('[historico] dSegments', dSegments); } catch(e) {}
 
     // Compute Y axis ticks: min, avg, max (converted to display cts)
     const avg = this.overallAverage() ?? (min + max) / 2;
