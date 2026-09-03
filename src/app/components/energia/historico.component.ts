@@ -141,12 +141,25 @@ export class HistoricoComponent implements OnInit {
       const x = padding + i * stepX;
       const val = this.values[i].media;
       let y: number | null = null;
-      if (val !== null && Number.isFinite(val)) {
+      // treat undefined, null, non-finite values as missing
+      if (val !== null && val !== undefined && Number.isFinite(val)) {
         const normalized = (val - min) / span;
-        y = padding + (1 - normalized) * (height - padding * 2);
+        const computed = padding + (1 - normalized) * (height - padding * 2);
+        // guard against NaN or Infinity after computation
+        if (Number.isFinite(computed)) y = computed;
+        else y = null;
+      } else {
+        y = null;
       }
       const label = this.dayLabel(this.values[i].fecha);
       points.push({ x, y, value: val, label, meta: this.values[i] });
+    }
+
+    // Defensive: ensure any non-finite y values are normalized to null so template checks work
+    for (const p of points) {
+      if (p.y === undefined || p.y === null || !Number.isFinite(p.y as any)) {
+        p.y = null;
+      }
     }
 
     // Build smooth path for contiguous segments of defined points
