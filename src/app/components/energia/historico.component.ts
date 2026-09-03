@@ -19,6 +19,7 @@ export class HistoricoComponent implements OnInit {
 
   // chart derived
   chartPath = '';
+  chartAreaPath = '';
   chartPoints: { x: number; y: number; value: number; label: string; meta?: PrecioDiario }[] = [];
   // axis ticks
   chartXAxisTicks: { x: number; label: string }[] = [];
@@ -215,6 +216,16 @@ export class HistoricoComponent implements OnInit {
     }
 
     this.chartPath = dSegments.join(' ');
+
+    // compute a safe area path using first/last defined point to avoid referencing null Y values
+    const firstDefined = points.find(p => p.y !== null);
+    const lastDefined = (() => { for (let i = points.length - 1; i >= 0; i--) if (points[i].y !== null) return points[i]; return null; })();
+    if (this.chartPath && firstDefined && lastDefined) {
+      this.chartAreaPath = `M ${firstDefined.x} ${firstDefined.y} ${this.chartPath} L ${lastDefined.x} ${height} L ${firstDefined.x} ${height} Z`;
+    } else {
+      this.chartAreaPath = '';
+    }
+
     this.chartPoints = points as any;
     this.chartXAxisTicks = xTicks;
   }

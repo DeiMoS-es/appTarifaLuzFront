@@ -36,15 +36,18 @@
 
           <path [attr.d]="chartPath" fill="none" stroke="#0b4a8b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></path>
           <g *ngFor="let p of chartPoints; let idx = index">
-            <circle [attr.cx]="p.x" [attr.cy]="p.y" r="4" fill="#fff" stroke="#0b4a8b" stroke-width="2"
-              (mouseenter)="showTooltipAtPoint(p, $event)" (mouseleave)="hideTooltip()" (mousemove)="showTooltipAtPoint(p,$event)"
-              (touchstart)="onTouchPoint(p,$event)" (click)="onPointClick(p)"></circle>
-            <!-- larger invisible hit area for easier touch -->
-            <circle [attr.cx]="p.x" [attr.cy]="p.y" r="12" fill="transparent" (mouseenter)="showTooltipAtPoint(p,$event)" (mouseleave)="hideTooltip()" (mousemove)="showTooltipAtPoint(p,$event)" (touchstart)="onTouchPoint(p,$event)" (click)="onPointClick(p)"></circle>
+            <!-- render marker only if we have a Y coordinate (numeric value). Avoid drawing markers at y=0 when value is null -->
+            <ng-container *ngIf="p.y !== null">
+              <circle [attr.cx]="p.x" [attr.cy]="p.y" r="4" fill="#fff" stroke="#0b4a8b" stroke-width="2"
+                (mouseenter)="showTooltipAtPoint(p, $event)" (mouseleave)="hideTooltip()" (mousemove)="showTooltipAtPoint(p,$event)"
+                (touchstart)="onTouchPoint(p,$event)" (click)="onPointClick(p)"></circle>
+              <!-- larger invisible hit area for easier touch -->
+              <circle [attr.cx]="p.x" [attr.cy]="p.y" r="12" fill="transparent" (mouseenter)="showTooltipAtPoint(p,$event)" (mouseleave)="hideTooltip()" (mousemove)="showTooltipAtPoint(p,$event)" (touchstart)="onTouchPoint(p,$event)" (click)="onPointClick(p)"></circle>
+            </ng-container>
           </g>
 
-          <!-- area fill under curve - simple polygon approximation -->
-          <path *ngIf="chartPoints.length>0" [attr.d]="('M ' + chartPoints[0].x + ' ' + chartPoints[0].y + ' ' + chartPath + ' L ' + chartPoints[chartPoints.length-1].x + ' 200 L ' + chartPoints[0].x + ' 200 Z')" fill="url(#fillGrad)" opacity="0.8"></path>
+          <!-- area fill under curve - only when we computed a safe area path -->
+          <path *ngIf="chartAreaPath" [attr.d]="chartAreaPath" fill="url(#fillGrad)" opacity="0.8"></path>
 
           <!-- gridlines and Y axis labels -->
           <g *ngIf="chartPoints.length>0">
