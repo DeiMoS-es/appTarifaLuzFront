@@ -69,14 +69,22 @@ export class HistoricoComponent implements OnInit {
 
     obs.subscribe({
       next: resp => {
-        this.values = resp.values || [];
-        // keep chart data chronological (oldest -> newest)
-        this.buildChart();
-        // reverse a copy for list display so newest appears first
-            this.displayValues = [...this.values].reverse();
-        this.selectedWeekDays = null;
-        this.selectedWeekStart = null;
-        this.loading = false;
+        try {
+          this.values = resp.values || [];
+          // keep chart data chronological (oldest -> newest)
+          this.buildChart();
+          // reverse a copy for list display so newest appears first
+          this.displayValues = [...this.values].reverse();
+          this.selectedWeekDays = null;
+          this.selectedWeekStart = null;
+        } catch (e) {
+          // Ensure any rendering errors don't leave the UI stuck in loading
+          // Log to console for debugging and surface a generic error to the user
+          try { console.error('historico build error', e); } catch(e2) {}
+          this.error = 'Error procesando datos históricos';
+        } finally {
+          this.loading = false;
+        }
       },
       error: err => {
         this.error = err?.message || 'No se pudieron cargar los datos históricos';
@@ -87,44 +95,80 @@ export class HistoricoComponent implements OnInit {
 
   // Build a simple SVG line path from daily media values and compute axis ticks
   private buildChart(): void {
-    const nums = this.values.map(v => (v.media === null ? 0 : v.media));
-    if (nums.length === 0) {
+    // Build chart while gracefully handling missing days (media === null).
+    // Keep chartPoints in 1:1 correspondence with this.values so tooltips and
+    // interactions remain indexed, but compute path only for defined points.
+    const width = 600; // viewBox width
+    const height = 200; // ViewBox height
+    const padding = 30;
+    const count = this.values.length;
+    if (count === 0) {
       this.chartPath = '';
       this.chartPoints = [];
       this.chartXAxisTicks = [];
       this.chartYAxisTicks = [];
       return;
     }
-    const width = 600; // viewBox width
-    const height = 200; // ViewBox height
-    const padding = 30;
-    const count = nums.length;
-    const min = Math.min(...nums);
-    const max = Math.max(...nums);
+
+    const valueNums = this.values.map(v => v.media);
+    const finiteNums = valueNums.filter(n => n !== null && Number.isFinite(n)) as number[];
+    if (finiteNums.length === 0) {
+      // No numeric data to draw
+      this.chartPath = '';
+      this.chartPoints = this.values.map((v, i) => ({ x: padding + i, y: null as any, value: null as any, label: this.dayLabel(v.fecha), meta: v }));
+      this.chartXAxisTicks = [];
+      this.chartYAxisTicks = [];
+      return;
+    }
+
+    const min = Math.min(...finiteNums);
+    const max = Math.max(...finiteNums);
     const span = max - min || 1;
     const stepX = (width - padding * 2) / Math.max(1, count - 1);
 
-    const points: { x: number; y: number; value: number; label: string; meta?: PrecioDiario }[] = [];
+    const points: { x: number; y: number | null; value: number | null; label: string; meta?: PrecioDiario }[] = [];
     for (let i = 0; i < count; i++) {
       const x = padding + i * stepX;
-      const normalized = (nums[i] - min) / span;
-      const y = padding + (1 - normalized) * (height - padding * 2);
+      const val = this.values[i].media;
+      let y: number | null = null;
+      if (val !== null && Number.isFinite(val)) {
+        const normalized = (val - min) / span;
+        y = padding + (1 - normalized) * (height - padding * 2);
+      }
       const label = this.dayLabel(this.values[i].fecha);
-      points.push({ x, y, value: nums[i], label, meta: this.values[i] });
+      points.push({ x, y, value: val, label, meta: this.values[i] });
     }
 
-    // Build smooth path with simple quadratic curves
-    const d: string[] = [];
-    for (let i = 0; i < points.length; i++) {
-      const p = points[i];
-      if (i === 0) d.push(`M ${p.x} ${p.y}`);
-      else {
-        const prev = points[i - 1];
-        const cx = (prev.x + p.x) / 2;
-        d.push(`Q ${prev.x} ${prev.y} ${cx} ${(prev.y + p.y) / 2}`);
-        d.push(`T ${p.x} ${p.y}`);
+    // Build smooth path for contiguous segments of defined points
+    const dSegments: string[] = [];
+    let segmentPoints: { x: number; y: number }[] = [];
+    const pushSegmentPath = (seg: { x: number; y: number }[]) => {
+      if (seg.length === 0) return;
+      const segD: string[] = [];
+      for (let i = 0; i < seg.length; i++) {
+        const p = seg[i];
+        if (i === 0) segD.push(`M ${p.x} ${p.y}`);
+        else {
+          const prev = seg[i - 1];
+          const cx = (prev.x + p.x) / 2;
+          segD.push(`Q ${prev.x} ${prev.y} ${cx} ${(prev.y + p.y) / 2}`);
+          segD.push(`T ${p.x} ${p.y}`);
+        }
+      }
+      dSegments.push(segD.join(' '));
+    };
+
+    for (const p of points) {
+      if (p.y === null) {
+        // flush existing segment
+        pushSegmentPath(segmentPoints);
+        segmentPoints = [];
+      } else {
+        segmentPoints.push({ x: p.x, y: p.y });
       }
     }
+    // flush last
+    pushSegmentPath(segmentPoints);
 
     // Compute Y axis ticks: min, avg, max (converted to display cts)
     const avg = this.overallAverage() ?? (min + max) / 2;
@@ -170,8 +214,8 @@ export class HistoricoComponent implements OnInit {
       }
     }
 
-    this.chartPath = d.join(' ');
-    this.chartPoints = points;
+    this.chartPath = dSegments.join(' ');
+    this.chartPoints = points as any;
     this.chartXAxisTicks = xTicks;
   }
 
