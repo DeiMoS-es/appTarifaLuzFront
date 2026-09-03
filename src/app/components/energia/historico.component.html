@@ -37,7 +37,7 @@
           <path [attr.d]="chartPath" fill="none" stroke="#0b4a8b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></path>
           <g *ngFor="let p of chartPoints; let idx = index">
             <!-- render marker only if we have a Y coordinate (numeric value). Avoid drawing markers at y=0 when value is null -->
-            <ng-container *ngIf="typeof p.y === 'number' && isFinite(p.y)">
+            <ng-container *ngIf="isFiniteNumber(p.y)">
               <circle [attr.cx]="p.x" [attr.cy]="p.y" r="4" fill="#fff" stroke="#0b4a8b" stroke-width="2"
                 (mouseenter)="showTooltipAtPoint(p, $event)" (mouseleave)="hideTooltip()" (mousemove)="showTooltipAtPoint(p,$event)"
                 (touchstart)="onTouchPoint(p,$event)" (click)="onPointClick(p)"></circle>

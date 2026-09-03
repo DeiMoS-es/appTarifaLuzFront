@@ -495,4 +495,9 @@ export class HistoricoComponent implements OnInit {
     return 'Normal';
   }
 
+  // Helper usado desde plantilla para comprobar si p.y es un número finito
+  isFiniteNumber(x: any): boolean {
+    return typeof x === 'number' && isFinite(x);
+  }
+
 }
